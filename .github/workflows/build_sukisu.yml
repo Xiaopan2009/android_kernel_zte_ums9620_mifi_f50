@@ -74,7 +74,7 @@ jobs:
           cp kernel_config_OT5.txt .config
           # Enable SukiSU (built-in), lock exact vermagic to match device stock kernel
           ./scripts/config --file .config --enable KSU
-          ./scripts/config --file .config --set-str CONFIG_LOCALVERSION "-android12-9-ga1d5c173d86b"
+          ./scripts/config --file .config --set-str CONFIG_LOCALVERSION "-android12-9-ga1d5c173d86b-ab1"
           ./scripts/config --file .config --disable CONFIG_LOCALVERSION_AUTO
           grep -E '^CONFIG_KSU|CONFIG_LOCALVERSION' .config | head -5
 
@@ -106,7 +106,7 @@ jobs:
           export KCFLAGS="-flto-jobs=1"
           # CRITICAL: --plugin-opt=-O0 cuts LTO link peak memory (CFI/LTO ABI preserved)
           echo "=== LINK FLAGS: --lto-O0 --plugin-opt=jobs=1 ==="
-          make -j4 ARCH=arm64 LLVM=1 LLVM_IAS=1 KBUILD_LDFLAGS="--lto-O0 --plugin-opt=jobs=1" Image
+          make -j4 ARCH=arm64 LLVM=1 LLVM_IAS=1 KBUILD_LDFLAGS="--lto-O0 --plugin-opt=jobs=1" LOCALVERSION= Image
           echo "=== VERMAGIC CHECK ==="
           strings arch/arm64/boot/Image | grep -m2 "Linux version 5.4" || true
           echo "=== RESULT ==="
