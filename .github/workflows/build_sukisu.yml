@@ -1,0 +1,77 @@
+name: Build SukiSU-Ultra Kernel for TCL OT5 (T508N)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+
+      - name: Install cross toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq gcc-aarch64-linux-gnu libc6-dev-arm64-cross cpio
+
+      - name: Download AOSP clang-r416183b (clang 12.0.5)
+        run: |
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b /tmp/clang-r416183b
+          ls /tmp/clang-r416183b/bin/clang && /tmp/clang-r416183b/bin/clang --version | head -2
+
+      - name: Integrate SukiSU-Ultra (kernel source)
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          git clone --depth=1 https://github.com/sukisu-ultra/SukiSU-Ultra KernelSU
+          cd KernelSU
+          if git fetch --depth=1 origin tag v4.1.3 2>/dev/null; then
+            git checkout v4.1.3
+            echo "Using SukiSU-Ultra v4.1.3"
+          else
+            echo "Using SukiSU-Ultra main branch (tag not found)"
+          fi
+          cd ..
+          ln -sf "$(realpath --relative-to=drivers KernelSU/kernel)" drivers/kernelsu
+          grep -q "kernelsu" drivers/Makefile || echo 'obj-$(CONFIG_KSU) += kernelsu/' >> drivers/Makefile
+          grep -q "kernelsu/Kconfig" drivers/Kconfig || echo 'source "drivers/kernelsu/Kconfig"' >> drivers/Kconfig
+          echo "--- drivers/Makefile tail ---"; tail -3 drivers/Makefile
+          echo "--- drivers/Kconfig tail ---"; tail -3 drivers/Kconfig
+
+      - name: Prepare kernel config (device /proc/config.gz + SukiSU)
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          cp kernel_config_OT5.txt .config
+          # Enable SukiSU (built-in), lock exact vermagic to match device stock kernel
+          ./scripts/config --file .config --enable KSU
+          ./scripts/config --file .config --set-str CONFIG_LOCALVERSION "-android12-9-ga1d5c173d86b"
+          ./scripts/config --file .config --disable CONFIG_LOCALVERSION_AUTO
+          grep -E '^CONFIG_KSU|CONFIG_LOCALVERSION' .config | head -5
+
+      - name: olddefconfig
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          export PATH=/tmp/clang-r416183b/bin:$PATH
+          make ARCH=arm64 LLVM=1 LLVM_IAS=1 olddefconfig
+          grep -E '^CONFIG_KSU|^CONFIG_KSU_|CONFIG_LOCALVERSION' .config | head -10
+
+      - name: Build kernel Image
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          export PATH=/tmp/clang-r416183b/bin:$PATH
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          make -j$(nproc) ARCH=arm64 LLVM=1 LLVM_IAS=1 Image
+          echo "=== VERMAGIC CHECK ==="
+          strings arch/arm64/boot/Image | grep -m2 "Linux version 5.4" || true
+          echo "=== RESULT ==="
+          ls -la arch/arm64/boot/Image
+
+      - name: Upload kernel Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: sukisu-kernel-ot5
+          path: arch/arm64/boot/Image
+          if-no-files-found: error
+          retention-days: 30
