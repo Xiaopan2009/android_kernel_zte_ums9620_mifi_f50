@@ -27,7 +27,7 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           git clone --depth=1 https://github.com/sukisu-ultra/SukiSU-Ultra KernelSU
           cd KernelSU
-          if git fetch --depth=1 origin tag v4.1.3 2>/dev/null; then
+          if git fetch --depth=1 origin refs/tags/v4.1.3:refs/tags/v4.1.3 2>/dev/null; then
             git checkout v4.1.3
             echo "Using SukiSU-Ultra v4.1.3"
           else
@@ -55,6 +55,8 @@ jobs:
           grep -rn 'nofault' KernelSU/kernel/ --include='*.c' | head -5 || echo "ALL nofault APIs patched"
           # 5.4 compat: fsnotify_ops has no handle_inode_event (added 5.10), use handle_event (8-arg)
           echo cCA9ICdLZXJuZWxTVS9rZXJuZWwvbWFuYWdlci9wa2dfb2JzZXJ2ZXIuYycKYyA9IG9wZW4ocCkucmVhZCgpCm9sZF9mbiA9ICcnJ3N0YXRpYyBpbnQga3N1X2hhbmRsZV9pbm9kZV9ldmVudChzdHJ1Y3QgZnNub3RpZnlfbWFyayAqbWFyaywgdTMyIG1hc2ssIHN0cnVjdCBpbm9kZSAqaW5vZGUsIHN0cnVjdCBpbm9kZSAqZGlyLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY29uc3Qgc3RydWN0IHFzdHIgKmZpbGVfbmFtZSwgdTMyIGNvb2tpZSkKewogICAgaWYgKCFmaWxlX25hbWUpCiAgICAgICAgcmV0dXJuIDA7CiAgICBpZiAobWFzayAmIEZTX0lTRElSKQogICAgICAgIHJldHVybiAwOwogICAgaWYgKGZpbGVfbmFtZS0+bGVuID09IDEzICYmICFtZW1jbXAoZmlsZV9uYW1lLT5uYW1lLCAicGFja2FnZXMubGlzdCIsIDEzKSkgewogICAgICAgIHByX2luZm8oInBhY2thZ2VzLmxpc3QgZGV0ZWN0ZWQ6ICVkXFxuIiwgbWFzayk7CiAgICAgICAgdHJhY2tfdGhyb25lKGZhbHNlKTsKICAgIH0KICAgIHJldHVybiAwOwp9JycnCm5ld19mbiA9ICcnJ3N0YXRpYyBpbnQga3N1X2hhbmRsZV9ldmVudChzdHJ1Y3QgZnNub3RpZnlfZ3JvdXAgKmdyb3VwLCBzdHJ1Y3QgaW5vZGUgKmlub2RlLCB1MzIgbWFzaywKICAgICAgICAgICAgICAgICAgICAgICAgICAgY29uc3Qgdm9pZCAqZGF0YSwgaW50IGRhdGFfdHlwZSwgY29uc3Qgc3RydWN0IHFzdHIgKmZpbGVfbmFtZSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgdTMyIGNvb2tpZSwgc3RydWN0IGZzbm90aWZ5X2l0ZXJfaW5mbyAqaXRlcl9pbmZvKQp7CiAgICBpZiAoIWZpbGVfbmFtZSkKICAgICAgICByZXR1cm4gMDsKICAgIGlmIChtYXNrICYgRlNfSVNESVIpCiAgICAgICAgcmV0dXJuIDA7CiAgICBpZiAoZmlsZV9uYW1lLT5sZW4gPT0gMTMgJiYgIW1lbWNtcChmaWxlX25hbWUtPm5hbWUsICJwYWNrYWdlcy5saXN0IiwgMTMpKSB7CiAgICAgICAgcHJfaW5mbygicGFja2FnZXMubGlzdCBkZXRlY3RlZDogJWRcXG4iLCBtYXNrKTsKICAgICAgICB0cmFja190aHJvbmUoZmFsc2UpOwogICAgfQogICAgcmV0dXJuIDA7Cn0nJycKYXNzZXJ0IG9sZF9mbiBpbiBjLCAncGtnX29ic2VydmVyIGZuIG5vdCBmb3VuZCcKYyA9IGMucmVwbGFjZShvbGRfZm4sIG5ld19mbikKYyA9IGMucmVwbGFjZSgnLmhhbmRsZV9pbm9kZV9ldmVudCA9IGtzdV9oYW5kbGVfaW5vZGVfZXZlbnQsJywgJy5oYW5kbGVfZXZlbnQgPSBrc3VfaGFuZGxlX2V2ZW50LCcpCm9wZW4ocCwgJ3cnKS53cml0ZShjKQpwcmludCgncGF0Y2hlZCBwa2dfb2JzZXJ2ZXIuYyBmb3IgNS40IGZzbm90aWZ5X29wcycpCg== | base64 -d | python3
+          echo cCA9ICdLZXJuZWxTVS9rZXJuZWwvcG9saWN5L2FsbG93bGlzdC5jJwpjID0gb3BlbihwKS5yZWFkKCkKIyBUV0FfUkVTVU1FIG1heSBiZSBtaXNzaW5nIG9uIDUuNCAob25seSBkZWZpbmVkIGluIG5ld2VyIHRhc2tfd29yay5oKQppZiAnVFdBX1JFU1VNRScgaW4gYyBhbmQgJyNkZWZpbmUgVFdBX1JFU1VNRScgbm90IGluIGM6CiAgICBjID0gYy5yZXBsYWNlKCcjaW5jbHVkZSA8bGludXgvdmVyc2lvbi5oPicsICcjaW5jbHVkZSA8bGludXgvdmVyc2lvbi5oPlxuI2lmbmRlZiBUV0FfUkVTVU1FXG4jZGVmaW5lIFRXQV9SRVNVTUUgMVxuI2VuZGlmJywgMSkKIyBwdXRfdGFza19zdHJ1Y3QgaXMgYSBtYWNybyBpbiBsaW51eC9zY2hlZC90YXNrLmggb24gNS40IChub3QgcHVsbGVkIGluIGJ5IGRlZmF1bHQpCmlmICcjaW5jbHVkZSA8bGludXgvc2NoZWQvdGFzay5oPicgbm90IGluIGM6CiAgICBjID0gYy5yZXBsYWNlKCcjaW5jbHVkZSA8bGludXgvdmVyc2lvbi5oPicsICcjaW5jbHVkZSA8bGludXgvdmVyc2lvbi5oPlxuI2luY2x1ZGUgPGxpbnV4L3NjaGVkL3Rhc2suaD4nLCAxKQpvcGVuKHAsICd3Jykud3JpdGUoYykKcHJpbnQoJ3BhdGNoZWQgYWxsb3dsaXN0LmMgZm9yIDUuNCAoVFdBX1JFU1VNRSArIHB1dF90YXNrX3N0cnVjdCknKQ== | base64 -d | python3
+
           echo "--- drivers/Makefile tail ---"; tail -3 drivers/Makefile
           echo "--- drivers/Kconfig tail ---"; tail -3 drivers/Kconfig
 
