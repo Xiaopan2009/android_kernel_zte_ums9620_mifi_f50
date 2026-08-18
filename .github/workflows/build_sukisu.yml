@@ -87,13 +87,22 @@ jobs:
       - name: Build kernel Image
         run: |
           cd "$GITHUB_WORKSPACE"
-          # add swap to survive full LTO link memory (free runner = 7GB RAM)
-          sudo fallocate -l 10G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
-          free -h
+          # replace built-in 3G swap with zram 8G (compressed, no disk) + disk swap 6G fallback
+          sudo swapoff -a 2>/dev/null || true
+          sudo rm -f /swapfile 2>/dev/null || true
+          sudo modprobe zram 2>/dev/null || echo "zram module unavailable"
+          if [ -e /sys/block/zram0 ]; then
+            echo 8G | sudo tee /sys/block/zram0/disksize >/dev/null
+            sudo mkswap /dev/zram0 >/dev/null 2>&1 && sudo swapon -p 100 /dev/zram0 && echo "ZRAM SWAP OK: 8G" || echo "zram swapon failed"
+          fi
+          free -h | grep -E 'Mem|Swap'
+          sudo fallocate -l 6G /swapfile2 && sudo chmod 600 /swapfile2 && sudo mkswap /swapfile2 >/dev/null && sudo swapon -p 50 /swapfile2 && echo "DISK SWAP OK: 6G" || echo "disk swap skipped (zram should cover)"
+          free -h | grep -E 'Mem|Swap'
+          df -h / | tail -1
           export PATH=/tmp/clang-r416183b/bin:$PATH
           export CROSS_COMPILE=aarch64-linux-gnu-
           # limit LTO parallelism to reduce peak memory (keeps CFI/LTO semantics)
-          export KCFLAGS="-flto-jobs=2"
+          export KCFLAGS="-flto-jobs=1"
           # low parallelism to keep memory headroom for the LTO link
           make -j2 ARCH=arm64 LLVM=1 LLVM_IAS=1 Image
           echo "=== VERMAGIC CHECK ==="
