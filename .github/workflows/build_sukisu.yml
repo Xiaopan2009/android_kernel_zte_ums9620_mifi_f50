@@ -43,6 +43,9 @@ jobs:
             printf '/* 5.4 compat shim */\n#ifndef _LINUX_PGTABLE_H\n#define _LINUX_PGTABLE_H\n#include <asm/pgtable.h>\n#endif\n' > include/linux/pgtable.h
           fi
           head -6 include/linux/pgtable.h
+          # 5.4 compat: strncpy_from_user_nofault was added in 5.8, 5.4 has strncpy_from_unsafe_user
+          sed -i 's/strncpy_from_user_nofault/strncpy_from_unsafe_user/g' KernelSU/kernel/feature/sucompat.c
+          grep -n 'strncpy_from_unsafe_user' KernelSU/kernel/feature/sucompat.c | head -3
           echo "--- drivers/Makefile tail ---"; tail -3 drivers/Makefile
           echo "--- drivers/Kconfig tail ---"; tail -3 drivers/Kconfig
 
