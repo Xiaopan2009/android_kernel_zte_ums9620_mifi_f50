@@ -87,9 +87,15 @@ jobs:
       - name: Build kernel Image
         run: |
           cd "$GITHUB_WORKSPACE"
+          # add swap to survive full LTO link memory (free runner = 7GB RAM)
+          sudo fallocate -l 10G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+          free -h
           export PATH=/tmp/clang-r416183b/bin:$PATH
           export CROSS_COMPILE=aarch64-linux-gnu-
-          make -j$(nproc) ARCH=arm64 LLVM=1 LLVM_IAS=1 Image
+          # limit LTO parallelism to reduce peak memory (keeps CFI/LTO semantics)
+          export KCFLAGS="-flto-jobs=2"
+          # low parallelism to keep memory headroom for the LTO link
+          make -j2 ARCH=arm64 LLVM=1 LLVM_IAS=1 Image
           echo "=== VERMAGIC CHECK ==="
           strings arch/arm64/boot/Image | grep -m2 "Linux version 5.4" || true
           echo "=== RESULT ==="
