@@ -2,8 +2,6 @@ name: Build SukiSU-Ultra Kernel for TCL OT5 (T508N)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
 
 jobs:
   build:
