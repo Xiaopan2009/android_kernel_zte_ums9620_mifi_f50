@@ -96,7 +96,7 @@ jobs:
             sudo mkswap /dev/zram0 >/dev/null 2>&1 && sudo swapon -p 100 /dev/zram0 && echo "ZRAM SWAP OK: 8G" || echo "zram swapon failed"
           fi
           free -h | grep -E 'Mem|Swap'
-          sudo fallocate -l 6G /swapfile2 && sudo chmod 600 /swapfile2 && sudo mkswap /swapfile2 >/dev/null && sudo swapon -p 50 /swapfile2 && echo "DISK SWAP OK: 6G" || echo "disk swap skipped (zram should cover)"
+          sudo fallocate -l 16G /swapfile2 && sudo chmod 600 /swapfile2 && sudo mkswap /swapfile2 >/dev/null && sudo swapon -p 50 /swapfile2 && echo "DISK SWAP OK: 16G" || echo "disk swap skipped (zram should cover)"
           free -h | grep -E 'Mem|Swap'
           df -h / | tail -1
           export PATH=/tmp/clang-r416183b/bin:$PATH
@@ -104,8 +104,8 @@ jobs:
           # limit LTO parallelism to reduce peak memory (keeps CFI/LTO semantics)
           export KCFLAGS="-flto-jobs=1"
           # CRITICAL: --plugin-opt=-O0 cuts LTO link peak memory (CFI/LTO ABI preserved)
-          echo "=== LINK FLAGS: --plugin-opt=-O0 --plugin-opt=jobs=1 ==="
-          make -j4 ARCH=arm64 LLVM=1 LLVM_IAS=1 KBUILD_LDFLAGS="--plugin-opt=-O0 --plugin-opt=jobs=1" Image
+          echo "=== LINK FLAGS: --lto-O0 --plugin-opt=jobs=1 ==="
+          make -j4 ARCH=arm64 LLVM=1 LLVM_IAS=1 KBUILD_LDFLAGS="--lto-O0 --plugin-opt=jobs=1" Image
           echo "=== VERMAGIC CHECK ==="
           strings arch/arm64/boot/Image | grep -m2 "Linux version 5.4" || true
           echo "=== RESULT ==="
