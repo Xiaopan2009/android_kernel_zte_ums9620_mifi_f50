@@ -40,12 +40,7 @@ jobs:
           # 5.4 kernel lacks include/linux/pgtable.h (added in 5.10): create compat forwarder
           mkdir -p include/linux
           if [ ! -f include/linux/pgtable.h ]; then
-            printf '/* 5.4 compat shim */
-#ifndef _LINUX_PGTABLE_H
-#define _LINUX_PGTABLE_H
-#include <asm/pgtable.h>
-#endif
-' > include/linux/pgtable.h
+            printf '/* 5.4 compat shim */\n#ifndef _LINUX_PGTABLE_H\n#define _LINUX_PGTABLE_H\n#include <asm/pgtable.h>\n#endif\n' > include/linux/pgtable.h
           fi
           head -6 include/linux/pgtable.h
           echo "--- drivers/Makefile tail ---"; tail -3 drivers/Makefile
