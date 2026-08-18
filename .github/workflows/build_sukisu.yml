@@ -54,42 +54,7 @@ jobs:
             KernelSU/kernel/hook/x86_64/patch_memory.c
           grep -rn 'nofault' KernelSU/kernel/ --include='*.c' | head -5 || echo "ALL nofault APIs patched"
           # 5.4 compat: fsnotify_ops has no handle_inode_event (added 5.10), use handle_event (8-arg)
-          python3 - <<'PYEOF'
-p = 'KernelSU/kernel/manager/pkg_observer.c'
-c = open(p).read()
-old_fn = '''static int ksu_handle_inode_event(struct fsnotify_mark *mark, u32 mask, struct inode *inode, struct inode *dir,
-                                  const struct qstr *file_name, u32 cookie)
-{
-    if (!file_name)
-        return 0;
-    if (mask & FS_ISDIR)
-        return 0;
-    if (file_name->len == 13 && !memcmp(file_name->name, "packages.list", 13)) {
-        pr_info("packages.list detected: %d\\n", mask);
-        track_throne(false);
-    }
-    return 0;
-}'''
-new_fn = '''static int ksu_handle_event(struct fsnotify_group *group, struct inode *inode, u32 mask,
-                           const void *data, int data_type, const struct qstr *file_name,
-                           u32 cookie, struct fsnotify_iter_info *iter_info)
-{
-    if (!file_name)
-        return 0;
-    if (mask & FS_ISDIR)
-        return 0;
-    if (file_name->len == 13 && !memcmp(file_name->name, "packages.list", 13)) {
-        pr_info("packages.list detected: %d\\n", mask);
-        track_throne(false);
-    }
-    return 0;
-}'''
-assert old_fn in c, 'pkg_observer fn not found'
-c = c.replace(old_fn, new_fn)
-c = c.replace('.handle_inode_event = ksu_handle_inode_event,', '.handle_event = ksu_handle_event,')
-open(p, 'w').write(c)
-print('patched pkg_observer.c for 5.4 fsnotify_ops')
-PYEOF
+          echo cCA9ICdLZXJuZWxTVS9rZXJuZWwvbWFuYWdlci9wa2dfb2JzZXJ2ZXIuYycKYyA9IG9wZW4ocCkucmVhZCgpCm9sZF9mbiA9ICcnJ3N0YXRpYyBpbnQga3N1X2hhbmRsZV9pbm9kZV9ldmVudChzdHJ1Y3QgZnNub3RpZnlfbWFyayAqbWFyaywgdTMyIG1hc2ssIHN0cnVjdCBpbm9kZSAqaW5vZGUsIHN0cnVjdCBpbm9kZSAqZGlyLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgY29uc3Qgc3RydWN0IHFzdHIgKmZpbGVfbmFtZSwgdTMyIGNvb2tpZSkKewogICAgaWYgKCFmaWxlX25hbWUpCiAgICAgICAgcmV0dXJuIDA7CiAgICBpZiAobWFzayAmIEZTX0lTRElSKQogICAgICAgIHJldHVybiAwOwogICAgaWYgKGZpbGVfbmFtZS0+bGVuID09IDEzICYmICFtZW1jbXAoZmlsZV9uYW1lLT5uYW1lLCAicGFja2FnZXMubGlzdCIsIDEzKSkgewogICAgICAgIHByX2luZm8oInBhY2thZ2VzLmxpc3QgZGV0ZWN0ZWQ6ICVkXFxuIiwgbWFzayk7CiAgICAgICAgdHJhY2tfdGhyb25lKGZhbHNlKTsKICAgIH0KICAgIHJldHVybiAwOwp9JycnCm5ld19mbiA9ICcnJ3N0YXRpYyBpbnQga3N1X2hhbmRsZV9ldmVudChzdHJ1Y3QgZnNub3RpZnlfZ3JvdXAgKmdyb3VwLCBzdHJ1Y3QgaW5vZGUgKmlub2RlLCB1MzIgbWFzaywKICAgICAgICAgICAgICAgICAgICAgICAgICAgY29uc3Qgdm9pZCAqZGF0YSwgaW50IGRhdGFfdHlwZSwgY29uc3Qgc3RydWN0IHFzdHIgKmZpbGVfbmFtZSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgdTMyIGNvb2tpZSwgc3RydWN0IGZzbm90aWZ5X2l0ZXJfaW5mbyAqaXRlcl9pbmZvKQp7CiAgICBpZiAoIWZpbGVfbmFtZSkKICAgICAgICByZXR1cm4gMDsKICAgIGlmIChtYXNrICYgRlNfSVNESVIpCiAgICAgICAgcmV0dXJuIDA7CiAgICBpZiAoZmlsZV9uYW1lLT5sZW4gPT0gMTMgJiYgIW1lbWNtcChmaWxlX25hbWUtPm5hbWUsICJwYWNrYWdlcy5saXN0IiwgMTMpKSB7CiAgICAgICAgcHJfaW5mbygicGFja2FnZXMubGlzdCBkZXRlY3RlZDogJWRcXG4iLCBtYXNrKTsKICAgICAgICB0cmFja190aHJvbmUoZmFsc2UpOwogICAgfQogICAgcmV0dXJuIDA7Cn0nJycKYXNzZXJ0IG9sZF9mbiBpbiBjLCAncGtnX29ic2VydmVyIGZuIG5vdCBmb3VuZCcKYyA9IGMucmVwbGFjZShvbGRfZm4sIG5ld19mbikKYyA9IGMucmVwbGFjZSgnLmhhbmRsZV9pbm9kZV9ldmVudCA9IGtzdV9oYW5kbGVfaW5vZGVfZXZlbnQsJywgJy5oYW5kbGVfZXZlbnQgPSBrc3VfaGFuZGxlX2V2ZW50LCcpCm9wZW4ocCwgJ3cnKS53cml0ZShjKQpwcmludCgncGF0Y2hlZCBwa2dfb2JzZXJ2ZXIuYyBmb3IgNS40IGZzbm90aWZ5X29wcycpCg== | base64 -d | python3
           echo "--- drivers/Makefile tail ---"; tail -3 drivers/Makefile
           echo "--- drivers/Kconfig tail ---"; tail -3 drivers/Kconfig
 
