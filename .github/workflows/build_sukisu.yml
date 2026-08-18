@@ -44,8 +44,15 @@ jobs:
           fi
           head -6 include/linux/pgtable.h
           # 5.4 compat: strncpy_from_user_nofault was added in 5.8, 5.4 has strncpy_from_unsafe_user
-          sed -i 's/strncpy_from_user_nofault/strncpy_from_unsafe_user/g' KernelSU/kernel/feature/sucompat.c
-          grep -n 'strncpy_from_unsafe_user' KernelSU/kernel/feature/sucompat.c | head -3
+          sed -i 's/strncpy_from_user_nofault/strncpy_from_unsafe_user/g' \
+            KernelSU/kernel/feature/sucompat.c \
+            KernelSU/kernel/sulog/event.c \
+            KernelSU/kernel/runtime/ksud_integration.c
+          # 5.4 compat: copy_to_kernel_nofault added in 5.8, 5.4 has probe_kernel_write
+          sed -i 's/copy_to_kernel_nofault/probe_kernel_write/g' \
+            KernelSU/kernel/hook/arm64/patch_memory.c \
+            KernelSU/kernel/hook/x86_64/patch_memory.c
+          grep -rn 'nofault' KernelSU/kernel/ --include='*.c' | head -5 || echo "ALL nofault APIs patched"
           echo "--- drivers/Makefile tail ---"; tail -3 drivers/Makefile
           echo "--- drivers/Kconfig tail ---"; tail -3 drivers/Kconfig
 
